@@ -4,7 +4,8 @@
 
 Kernel signing utility for overall kernel management on Debian/Ubuntu systems.
 
-Uses:
+## Uses
+
 * Signing installed mainline linux kernels using available user EFI keys (allowing them to run with secure boot)
 * Deleting old/invalid signed keys
 * Option to reboot when finished
