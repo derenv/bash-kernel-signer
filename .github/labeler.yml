@@ -1,0 +1,8 @@
+script:
+- 'bash-kernel-signer.sh'
+
+config:
+- 'keylocations.cfg'
+
+readme:
+- 'README.md'
