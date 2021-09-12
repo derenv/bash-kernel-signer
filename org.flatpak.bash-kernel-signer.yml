@@ -1,0 +1,13 @@
+app-id: org.flatpak.bash-kernel-signer
+runtime: org.freedesktop.Platform
+runtime-version: '21.08'
+sdk: org.freedesktop.Sdk
+command: bash-kernel-signer.sh
+modules:
+  - name: bash-kernel-signer
+    buildsystem: simple
+    build-commands:
+      - install -D bash-kernel-signer.sh /app/bin/bash-kernel-signer.sh
+    sources:
+      - type: file
+        path: bash-kernel-signer.sh
