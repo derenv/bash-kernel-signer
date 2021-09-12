@@ -2,14 +2,14 @@
 
 ## Description
 
-Kernel signing utility for overall kernel management on Debian/Ubuntu systems.
+Kernel signing utility for easy overall kernel management on Ubuntu systems.
 
 ## Uses
 
 * Signing installed mainline linux kernels using available user EFI keys (allowing them to run with secure boot)
 * Deleting old/invalid signed keys
 * Option to reboot when finished
-* Also links to grub-customizer for easy modification of boot config and mainline kernel installer for installing new kernels
+* Also links to [grub-customizer](https://launchpad.net/~danielrichter2007/+archive/ubuntu/grub-customizer) for easy modification of boot config and [mainline](https://github.com/bkw777/mainline) kernel installer for installing new Ubuntu mainline PPA kernels
 
 ## Running
 
@@ -19,5 +19,5 @@ Set the directories for EFI keys and boot images in the config file and run as s
 
 ## Dependencies
 
-* grub-customizer
-* mainline-gtk
+* [grub-customizer](https://launchpad.net/~danielrichter2007/+archive/ubuntu/grub-customizer)
+* [mainline](https://github.com/bkw777/mainline)
