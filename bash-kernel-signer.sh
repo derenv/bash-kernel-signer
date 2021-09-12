@@ -3,7 +3,7 @@
 ##
 #  Author: Deren Vural
 #   Title: bash-kernel-signer.sh
-# Purpose: signing available linux kernels using user keys
+# Purpose: signing installed linux kernels using available user EFI keys
 # Created: 12/09/2021
 ##
 
@@ -46,7 +46,7 @@ function sign_kernel()
   prev_out=""
   until [[ "$stop" == "True" ]]; do
     tput reset
-    echo "========KSIGN (KERNEL SIGNING) UTILITY========"
+    echo "========BASH KERNEL SIGNING UTILITY========"
 
     # Search for kernels
     mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
@@ -93,7 +93,7 @@ function purge_kernel()
   prev_out=""
   until [[ "$stop" == "True" ]]; do
     tput reset
-    echo "========KSIGN (KERNEL SIGNING) UTILITY========"
+    echo "========BASH KERNEL SIGNING UTILITY========"
 
     # Search for kernels
     mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
@@ -140,7 +140,7 @@ stop="False"
 prev_out=""
 while [[ "$stop" == "False" ]]; do
   tput reset
-  echo "========KSIGN (KERNEL SIGNING) UTILITY========"
+  echo "========BASH KERNEL SIGNING UTILITY========"
 
   # Search for kernels
   mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
