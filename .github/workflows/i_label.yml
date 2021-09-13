@@ -1,0 +1,20 @@
+# This workflow will triage issues and apply a label
+#
+# See .github/i_labeler.yml file for actions
+
+name: New Issue Labeler
+on:
+  issues:
+    [opened, edited]
+
+jobs:
+  label:
+    name: Label new issues
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add 'Needs Review' label
+      - uses: actions/i_labeler@v1
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
