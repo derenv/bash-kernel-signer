@@ -9,12 +9,10 @@ on:
 
 jobs:
   label:
-    name: Label new issues
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
-      - name: Add 'Needs Review' label
       - uses: actions/i_labeler@v1
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
