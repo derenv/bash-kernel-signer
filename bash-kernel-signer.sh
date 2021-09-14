@@ -16,31 +16,6 @@ ERROR_MSG=""
 ## Functions
 function sign_kernel()
 {
-  ## Check for signing keys
-  # Check if files specified in config
-  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-  if [[ -f "$SCRIPT_DIR/keylocations.cfg" ]];then
-    source "$SCRIPT_DIR/keylocations.cfg"
-
-    # Check valid locations
-    if [[ -z $key_location ]] || [[ -z $cert_location ]]; then
-      # Otherwise print error
-      ERROR_MSG="malformed config file.."
-      return 1
-    fi
-  else
-    # Otherwise print error
-    ERROR_MSG="missing config file.."
-    return 1
-  fi
-
-  # Check files exist
-  if [[ ! -f $key_location ]] || [[ ! -f $cert_location ]]; then
-    # Otherwise print error
-    ERROR_MSG="missing signing key/certificate.."
-    return 1
-  fi
-
   ## Sign loop
   stop="False"
   prev_out=""
@@ -49,8 +24,8 @@ function sign_kernel()
     echo "=========BASH KERNEL SIGNING UTILITY=========="
 
     # Search for kernels
-    mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
-    mapfile -t skernels < <( find /boot -name "vmlinuz-*-signed" | sort -n )
+    mapfile -t ukernels < <( find "$kernel_location" -name "vmlinuz-*-generic" | sort -n )
+    mapfile -t skernels < <( find "$kernel_location" -name "vmlinuz-*-signed" | sort -n )
 
     # Print all kernels
     echo " Number of kernels available for signing: ${#ukernels[@]}"
@@ -96,8 +71,8 @@ function purge_kernel()
     echo "=========BASH KERNEL SIGNING UTILITY=========="
 
     # Search for kernels
-    mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
-    mapfile -t skernels < <( find /boot -name "vmlinuz-*-signed" | sort -n )
+    mapfile -t ukernels < <( find "$kernel_location" -name "vmlinuz-*-generic" | sort -n )
+    mapfile -t skernels < <( find "$kernel_location" -name "vmlinuz-*-signed" | sort -n )
 
     # Print all kernels
     echo " Number of kernels available for signing: ${#ukernels[@]}"
@@ -135,6 +110,37 @@ function purge_kernel()
 }
 
 
+## Check for signing keys
+# Check if files specified in config
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+if [[ -f "$SCRIPT_DIR/keylocations.cfg" ]];then
+  source "$SCRIPT_DIR/keylocations.cfg"
+
+  # Check valid locations
+  if [[ -z $key_location ]] || [[ -z $cert_location ]] || [[ -z $kernel_location ]]; then
+    # Otherwise print error
+    echo "malformed config file.."
+    exit 1
+  fi
+else
+  # Otherwise print error
+  echo "missing config file.."
+  exit 1
+fi
+
+# Check files exist
+if [[ ! -f $key_location ]] || [[ ! -f $cert_location ]]; then
+  # Otherwise print error
+  echo "missing signing key/certificate, check config file.."
+  exit 1
+fi
+if [[ ! -d $kernel_location ]]; then
+  # Otherwise print error
+  echo "missing kernel location, check config file.."
+  exit 1
+fi
+
+
 ## Main Loop
 stop="False"
 prev_out=""
@@ -143,8 +149,8 @@ while [[ "$stop" == "False" ]]; do
   echo "=========BASH KERNEL SIGNING UTILITY=========="
 
   # Search for kernels
-  mapfile -t ukernels < <( find /boot -name "vmlinuz-*-generic" | sort -n )
-  mapfile -t skernels < <( find /boot -name "vmlinuz-*-signed" | sort -n )
+  mapfile -t ukernels < <( find "$kernel_location" -name "vmlinuz-*-generic" | sort -n )
+  mapfile -t skernels < <( find "$kernel_location" -name "vmlinuz-*-signed" | sort -n )
 
   # Print all kernels
   echo " Number of kernels available for signing: ${#ukernels[@]}"
