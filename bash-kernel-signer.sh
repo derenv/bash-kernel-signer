@@ -158,7 +158,7 @@ function create_keys()
     cat "${user_input}/old_db.esl" "${user_input}/db.esl" > "${user_input}/compound_db.esl"
     sign-efi-sig-list -k "${user_input}/PK.key" -c "${user_input}/PK.crt" KEK "${user_input}/compound_KEK.esl" "${user_input}/compound_KEK.auth"
     sign-efi-sig-list -k "${user_input}/KEK.key" -c "${user_input}/KEK.crt" db "${user_input}/compound_db.esl" "${user_input}/compound_db.auth"
-    read -n 1 -s -r -p "New esl & auth files successfully generated! See Sakaki's guide to update your keystore! (press any key to continue)"
+    read -n 1 -s -r -p "New esl & auth files successfully generated! See Sakaki's guide (https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki's_EFI_Install_Guide/Configuring_Secure_Boot#Installing_New_Keys_into_the_Keystore) to update your keystore! (press any key to continue)"
   else
     ERROR_MSG="invalid directory, please exit and create new directory (check permissions!).."
     return 1
