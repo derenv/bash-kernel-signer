@@ -7,7 +7,7 @@ Kernel signing utility for easy overall kernel management on Ubuntu systems.
 ## Uses
 
 * Creating a modified signature database using GPG
-* Signing installed mainline linux kernels (allowing them to run with secure boot)
+* Signing installed mainline or custom linux kernels (allowing them to run with secure boot)
 * Deleting old/invalid signed kernels
 * Option to reboot when finished
 * Also links to [grub-customizer](https://launchpad.net/~danielrichter2007/+archive/ubuntu/grub-customizer) for easy modification of boot config and [mainline](https://github.com/bkw777/mainline) kernel installer for installing new Ubuntu mainline PPA kernels
