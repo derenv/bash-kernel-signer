@@ -43,7 +43,7 @@ function sign_kernel()
     echo "$prev_out"
     echo "=============================================="
     echo "0 - Exit"
-    read -r user_input -p "Which kernel would you like to sign?:"
+    read -p "Which kernel would you like to sign?:" -r user_input
 
     if [[ "$user_input" == "0" ]]; then
       ERROR_MSG="cancelled.."
@@ -89,7 +89,7 @@ function purge_kernel()
     echo "$prev_out"
     echo "=============================================="
     echo "0 - Exit"
-    read -r user_input -p "Which signed kernel would you like to purge?:"
+    read -p "Which signed kernel would you like to purge?:" -r user_input
 
     if [[ "$user_input" == "0" ]]; then
       ERROR_MSG="cancelled.."
@@ -246,7 +246,7 @@ while [[ "$stop" == "False" ]]; do
   echo "5 - Modify Grub"
   echo "6 - Reboot"
   echo "0 - Exit"
-  read -r user_input -p "enter input:"
+  read -p "enter input:" -r user_input
 
   if [[ "$user_input" == "1" ]]; then
     if [[ "$valid_keys" == "True" ]]; then
@@ -278,7 +278,8 @@ while [[ "$stop" == "False" ]]; do
     fi
   elif [[ "$user_input" == "4" ]]; then
     # check mainline present
-    if ! command -v mainline-gtk &> /dev/null; then
+    command_exists=$(su -c 'command -v mainline-gtk' "$(logname)")
+    if [[ -n "$command_exists" ]]; then
       # redirect to mainline-gtk app
       mainline-gtk
       if [[ $? == 0 ]]; then
@@ -287,11 +288,12 @@ while [[ "$stop" == "False" ]]; do
         prev_out="failure: $?"
       fi
     else
-      prev_out="grub-customizer not present!"
+      prev_out="mainline-gtk not present!"
     fi
   elif [[ "$user_input" == "5" ]]; then
+    command_exists=$(su -c 'command -v grub-customizer' "$(logname)")
     # check grub-customizer present
-    if ! command -v grub-customizer &> /dev/null; then
+    if [[ -n "$command_exists" ]]; then
       # redirect to grub-customizer app
       grub-customizer
       if [[ $? == 0 ]]; then
