@@ -277,20 +277,30 @@ while [[ "$stop" == "False" ]]; do
       prev_out="failure: $ERROR_MSG"
     fi
   elif [[ "$user_input" == "4" ]]; then
-    # redirect to mainline-gtk app
-    mainline-gtk
-    if [[ $? == 0 ]]; then
-      prev_out="success!"
+    # check mainline present
+    if ! command -v mainline-gtk &> /dev/null; then
+      # redirect to mainline-gtk app
+      mainline-gtk
+      if [[ $? == 0 ]]; then
+        prev_out="success!"
+      else
+        prev_out="failure: $?"
+      fi
     else
-      prev_out="failure: $?"
+      prev_out="grub-customizer not present!"
     fi
   elif [[ "$user_input" == "5" ]]; then
-    # redirect to grub-customizer app
-    grub-customizer
-    if [[ $? == 0 ]]; then
-      prev_out="success!"
+    # check grub-customizer present
+    if ! command -v grub-customizer &> /dev/null; then
+      # redirect to grub-customizer app
+      grub-customizer
+      if [[ $? == 0 ]]; then
+        prev_out="success!"
+      else
+        prev_out="failure: $?"
+      fi
     else
-      prev_out="failure: $?"
+      prev_out="grub-customizer not present!"
     fi
   elif [[ "$user_input" == "6" ]]; then
     reboot
