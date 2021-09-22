@@ -222,14 +222,20 @@ while [[ "$stop" == "False" ]]; do
   mapfile -t ukernels < <( find "$kernel_location" -name "vmlinuz-*-generic" | sort -n )
   mapfile -t skernels < <( find "$kernel_location" -name "vmlinuz-*-signed" | sort -n )
 
+  # Validate kernel signatures
+  signvalids=()
+  for skernel in ${skernels[@]}; do
+    signvalids+=$(sbverify --cert "$cert_location" "${skernel}")
+  done
+
   # Print all kernels
   echo " Number of kernels available for signing: ${#ukernels[@]}"
-  for k in "${ukernels[@]}"; do
-    echo "  $k"
+  for ukernel in "${ukernels[@]}"; do
+    echo "  $ukernel"
   done
   echo " Number of signed kernels: ${#skernels[@]}"
-  for k in "${skernels[@]}"; do
-    echo "  $k"
+  for ((i=0; i<${#skernels[@]}; i++)); do
+    echo "  ${skernels[i]} -> ${signvalids[i]}"
   done
   if [[ "$valid_keys" == "True" ]]; then
     echo "Signature Database key & certificate detected.."
