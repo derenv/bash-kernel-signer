@@ -32,7 +32,7 @@ function sign_kernel()
     invalid_validity_checks=()
 
     # For each detected kernel
-    for unvalidated_kernel in ${kernels[@]}; do
+    for unvalidated_kernel in "${kernels[@]}"; do
       # Validate kernel signatures
       mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
 
@@ -61,7 +61,7 @@ function sign_kernel()
       echo "  -none-"
     else
       counter=0
-      id=$(expr "$counter" + 1)
+      id=$(( "$counter" + 1 ))
       for kernel in "${unsigned_kernels[@]}"; do
         echo "  $id - $kernel"
         (( counter++ ))
@@ -130,7 +130,7 @@ function purge_kernel()
     invalid_validity_checks=()
 
     # For each detected kernel
-    for unvalidated_kernel in ${kernels[@]}; do
+    for unvalidated_kernel in "${kernels[@]}"; do
       # Validate kernel signatures
       mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
 
@@ -168,7 +168,7 @@ function purge_kernel()
     else
       counter=0
       for kernel in "${valid_signed_kernels[@]}"; do
-        id=$(expr "$counter" + 1)
+        id=$(( "$counter" + 1 ))
         echo "  $id - $kernel"
         echo "    -> ${valid_validity_checks[$counter]}"
         (( counter++ ))
@@ -198,7 +198,7 @@ function purge_kernel()
     elif [[ "$user_input" =~ ^[0-9]+$ ]] && test "$user_input" -le "${#valid_signed_kernels[@]}"; then
       # Purge signed kernel
       selection=$(( user_input - 1 ))
-      sudo rm -f "${valid_signed_kernels[$selection]}" >> /home/deren/bin/bash-kernel-signer/TEST.log 2>&1
+      sudo rm -f "${valid_signed_kernels[$selection]}"
       prev_out="$?"
     else
       prev_out="invalid input.."
@@ -328,7 +328,7 @@ while [[ "$stop" == "False" ]]; do
   invalid_validity_checks=()
 
   # For each detected kernel
-  for unvalidated_kernel in ${kernels[@]}; do
+  for unvalidated_kernel in "${kernels[@]}"; do
     # Validate kernel signatures
     mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
 
