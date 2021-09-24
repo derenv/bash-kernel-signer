@@ -236,42 +236,53 @@ function create_keys()
     efi-readvar -v KEK -o "${user_input}/old_KEK.esl"
     efi-readvar -v db -o "${user_input}/old_db.esl"
     efi-readvar -v dbx -o "${user_input}/old_dbx.esl"
+    # (continue)
     read -n 1 -s -r -p "Old keys successfully read into files, press any key to continue.."
 
     # Generate keys and certificates
     echo "generating keys & certificates..."
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/PK.key" -out "${user_input}/PK.crt" -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/KEK.key" -out "${user_input}/KEK.crt" -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/db.key" -out "${user_input}/db.crt" -days 3650 -nodes -sha256
+    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_PK.key" -out "${user_input}new_/PK.crt" -days 3650 -nodes -sha256
+    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_KEK.key" -out "${user_input}/new_KEK.crt" -days 3650 -nodes -sha256
+    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_db.key" -out "${user_input}/new_db.crt" -days 3650 -nodes -sha256
     # Change permissions to read-only for root (precaution)
-    sudo chmod -v 400 "${user_input}/PK.key"
-    sudo chmod -v 400 "${user_input}/KEK.key"
-    sudo chmod -v 400 "${user_input}/db.key"
+    sudo chmod -v 400 "${user_input}/new_PK.key"
+    sudo chmod -v 400 "${user_input}/new_KEK.key"
+    sudo chmod -v 400 "${user_input}/new_db.key"
+    # (continue)
     read -n 1 -s -r -p "Keys successfully generated, press any key to continue.."
 
     # Create update files
     echo "creating update files for keystore.."
-    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/PK.crt" "${user_input}/PK.esl"
-    sign-efi-sig-list -k "${user_input}/PK.key" -c "${user_input}/PK.crt" PK "${user_input}/PK.esl" "${user_input}/PK.auth"
-    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/KEK.crt" "${user_input}/KEK.esl"
-    sign-efi-sig-list -a -k "${user_input}/PK.key" -c "${user_input}/PK.crt" KEK "${user_input}/KEK.esl" "${user_input}/KEK.auth"
-    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/db.crt" "${user_input}/db.esl"
-    sign-efi-sig-list -a -k "${user_input}/KEK.key" -c "${user_input}/KEK.crt" db "${user_input}/db.esl" "${user_input}/db.auth"
-    sign-efi-sig-list -k "${user_input}/KEK.key" -c "${user_input}/KEK.crt" dbx "${user_input}/old_dbx.esl" "${user_input}/old_dbx.auth"
+    # PK
+    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/new_PK.crt" "${user_input}/new_PK.esl"
+    sign-efi-sig-list -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" PK "${user_input}/new_PK.esl" "${user_input}/new_PK.auth"
+    # KEK
+    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/new_KEK.crt" "${user_input}/new_KEK.esl"
+    sign-efi-sig-list -a -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" KEK "${user_input}/new_KEK.esl" "${user_input}/new_KEK.auth"
+    # db
+    cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/new_db.crt" "${user_input}/new_db.esl"
+    sign-efi-sig-list -a -k "${user_input}/new_KEK.key" -c "${user_input}/new_KEK.crt" db "${user_input}/new_db.esl" "${user_input}/new_db.auth"
+    # dbx
+    sign-efi-sig-list -k "${user_input}/new_KEK.key" -c "${user_input}/new_KEK.crt" dbx "${user_input}/old_dbx.esl" "${user_input}/old_dbx.auth"
+    # (continue)
     read -n 1 -s -r -p "Update files successfully generated, press any key to continue.."
 
     # Create DER (Distinguished Encoding Rules) files, needed for some BIOSes
-    openssl x509 -outform DER -in "${user_input}/PK.crt" -out "${user_input}/PK.cer"
-    openssl x509 -outform DER -in "${user_input}/KEK.crt" -out "${user_input}/KEK.cer"
-    openssl x509 -outform DER -in "${user_input}/db.crt" -out "${user_input}/db.cer"
+    openssl x509 -outform DER -in "${user_input}/new_PK.crt" -out "${user_input}/new_PK.cer"
+    openssl x509 -outform DER -in "${user_input}/new_KEK.crt" -out "${user_input}/new_KEK.cer"
+    openssl x509 -outform DER -in "${user_input}/new_db.crt" -out "${user_input}/new_db.cer"
+    # (continue)
     read -n 1 -s -r -p "DER versions successfully generated, press any key to continue"
 
     # Create compound esl files & auth counterparts
-    cat "${user_input}/old_KEK.esl" "${user_input}/KEK.esl" > "${user_input}/compound_KEK.esl"
-    cat "${user_input}/old_db.esl" "${user_input}/db.esl" > "${user_input}/compound_db.esl"
-    sign-efi-sig-list -k "${user_input}/PK.key" -c "${user_input}/PK.crt" KEK "${user_input}/compound_KEK.esl" "${user_input}/compound_KEK.auth"
-    sign-efi-sig-list -k "${user_input}/KEK.key" -c "${user_input}/KEK.crt" db "${user_input}/compound_db.esl" "${user_input}/compound_db.auth"
-    read -n 1 -s -r -p "New esl & auth files successfully generated! See Sakaki's guide (https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki's_EFI_Install_Guide/Configuring_Secure_Boot#Installing_New_Keys_into_the_Keystore) to update your keystore! (press any key to continue)"
+    cat "${user_input}/old_KEK.esl" "${user_input}/new_KEK.esl" > "${user_input}/compound_KEK.esl"
+    cat "${user_input}/old_db.esl" "${user_input}/new_db.esl" > "${user_input}/compound_db.esl"
+    sign-efi-sig-list -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" KEK "${user_input}/compound_KEK.esl" "${user_input}/compound_KEK.auth"
+    sign-efi-sig-list -k "${user_input}/new_KEK.key" -c "${user_input}/new_KEK.crt" db "${user_input}/compound_db.esl" "${user_input}/compound_db.auth"
+    # (continue)
+    echo "New esl & auth files successfully generated!"
+    echo "See Sakaki's guide (https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki's_EFI_Install_Guide/Configuring_Secure_Boot#Installing_New_Keys_into_the_Keystore) on how to update your keystore!"
+    read -n 1 -s -r -p "(press any key to continue)"
   else
     ERROR_MSG="invalid directory, please exit and create new directory (check permissions!).."
     return 1
