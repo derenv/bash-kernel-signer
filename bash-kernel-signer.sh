@@ -223,7 +223,7 @@ function create_keys()
 {
   # Get user input
   tput reset
-  read -r user_input -p "Please specify (existing) directory for new keys & certificates:"
+  read -p "Please specify (existing) directory for new keys & certificates:" -r user_input
 
   # Validate folder exists
   if [[ "$user_input" == "0" ]]; then
@@ -240,10 +240,10 @@ function create_keys()
     read -n 1 -s -r -p "Old keys successfully read into files, press any key to continue.."
 
     # Generate keys and certificates
-    echo "generating keys & certificates..."
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_PK.key" -out "${user_input}new_/PK.crt" -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_KEK.key" -out "${user_input}/new_KEK.crt" -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -keyout "${user_input}/new_db.key" -out "${user_input}/new_db.crt" -days 3650 -nodes -sha256
+    echo -e "\ngenerating keys & certificates..."
+    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=new platform key/" -keyout "${user_input}/new_PK.key" -out "${user_input}/new_PK.crt" -days 3650 -nodes -sha256
+    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=new key exchange key/" -keyout "${user_input}/new_KEK.key" -out "${user_input}/new_KEK.crt" -days 3650 -nodes -sha256
+    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=new kernel signing key/" -keyout "${user_input}/new_db.key" -out "${user_input}/new_db.crt" -days 3650 -nodes -sha256
     # Change permissions to read-only for root (precaution)
     sudo chmod -v 400 "${user_input}/new_PK.key"
     sudo chmod -v 400 "${user_input}/new_KEK.key"
@@ -252,7 +252,7 @@ function create_keys()
     read -n 1 -s -r -p "Keys successfully generated, press any key to continue.."
 
     # Create update files
-    echo "creating update files for keystore.."
+    echo "\ncreating update files for keystore.."
     # PK
     cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/new_PK.crt" "${user_input}/new_PK.esl"
     sign-efi-sig-list -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" PK "${user_input}/new_PK.esl" "${user_input}/new_PK.auth"
@@ -272,7 +272,7 @@ function create_keys()
     openssl x509 -outform DER -in "${user_input}/new_KEK.crt" -out "${user_input}/new_KEK.cer"
     openssl x509 -outform DER -in "${user_input}/new_db.crt" -out "${user_input}/new_db.cer"
     # (continue)
-    read -n 1 -s -r -p "DER versions successfully generated, press any key to continue"
+    read -n 1 -s -r -p "\nDER versions successfully generated, press any key to continue"
 
     # Create compound esl files & auth counterparts
     cat "${user_input}/old_KEK.esl" "${user_input}/new_KEK.esl" > "${user_input}/compound_KEK.esl"
@@ -281,6 +281,7 @@ function create_keys()
     sign-efi-sig-list -k "${user_input}/new_KEK.key" -c "${user_input}/new_KEK.crt" db "${user_input}/compound_db.esl" "${user_input}/compound_db.auth"
     # (continue)
     echo "New esl & auth files successfully generated!"
+    echo "Add /etc/efikeys/db.key abd /etc/efikeys/db.crt to config file!"
     echo "See Sakaki's guide (https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki's_EFI_Install_Guide/Configuring_Secure_Boot#Installing_New_Keys_into_the_Keystore) on how to update your keystore!"
     read -n 1 -s -r -p "(press any key to continue)"
   else
