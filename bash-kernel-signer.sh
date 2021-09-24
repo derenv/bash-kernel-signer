@@ -123,69 +123,79 @@ function purge_kernel()
 
     # Search for kernels
     mapfile -t kernels < <( find "$kernel_location" -name "vmlinuz-*" | sort -n )
-    unsigned_kernels=()
-    valid_signed_kernels=()
-    invalid_signed_kernels=()
-    valid_validity_checks=()
-    invalid_validity_checks=()
 
-    # For each detected kernel
-    for unvalidated_kernel in "${kernels[@]}"; do
-      # Validate kernel signatures
-      mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
+    # Only verify keys if keys exist
+    if [[ "$valid_keys" == "True" ]]; then
+      unsigned_kernels=()
+      valid_signed_kernels=()
+      invalid_signed_kernels=()
+      valid_validity_checks=()
+      invalid_validity_checks=()
 
-      # Increment signed/unsigned kernels
-      if [[  "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification OK" ]]; then
-        # Add to valid signed kernels
-        valid_signed_kernels+=("$unvalidated_kernel")
-        valid_validity_checks+=("${validity_check[0]}")
-      elif [[ "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification failed" ]]; then
-        # Add to invalid signed kernels
-        invalid_signed_kernels+=("$unvalidated_kernel")
-        invalid_validity_checks+=("${validity_check[0]}")
-      elif [[ "${#validity_check[@]}" = 2 && "${validity_check[0]}" = "No signature table present" ]]; then
-        # Add to unsinged kernels
-        unsigned_kernels+=("$unvalidated_kernel")
+      # For each detected kernel
+      for unvalidated_kernel in "${kernels[@]}"; do
+        # Validate kernel signatures
+        mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
+
+        # Increment signed/unsigned kernels
+        if [[  "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification OK" ]]; then
+          # Add to valid signed kernels
+          valid_signed_kernels+=("$unvalidated_kernel")
+          valid_validity_checks+=("${validity_check[0]}")
+        elif [[ "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification failed" ]]; then
+          # Add to invalid signed kernels
+          invalid_signed_kernels+=("$unvalidated_kernel")
+          invalid_validity_checks+=("${validity_check[0]}")
+        elif [[ "${#validity_check[@]}" = 2 && "${validity_check[0]}" = "No signature table present" ]]; then
+          # Add to unsinged kernels
+          unsigned_kernels+=("$unvalidated_kernel")
+        else
+          # SOME UNKNOWN ERROR?
+          echo "??error??"
+        fi
+      done
+
+      # Print all kernels
+      declare -i counter
+      echo " Number of kernels available for signing: ${#unsigned_kernels[@]}"
+      if [[ "${#unsigned_kernels[@]}" == 0 ]]; then
+        echo "  -none-"
       else
-        # SOME UNKNOWN ERROR?
-        echo "??error??"
+        for kernel in "${unsigned_kernels[@]}"; do
+          echo "  $kernel"
+        done
       fi
-    done
-
-    # Print all kernels
-    declare -i counter
-    echo " Number of kernels available for signing: ${#unsigned_kernels[@]}"
-    if [[ "${#unsigned_kernels[@]}" == 0 ]]; then
-      echo "  -none-"
+      echo " Number of signed kernels: ${#valid_signed_kernels[@]}"
+      if [[ "${#valid_signed_kernels[@]}" == 0 ]]; then
+        echo "  -none-"
+      else
+        counter=0
+        for kernel in "${valid_signed_kernels[@]}"; do
+          id=$(( "$counter" + 1 ))
+          echo "  $id - $kernel"
+          echo "    -> ${valid_validity_checks[$counter]}"
+          (( counter++ ))
+        done
+      fi
+      echo " Number of invalid signed kernels: ${#invalid_signed_kernels[@]}"
+      if [[ "${#invalid_signed_kernels[@]}" == 0 ]]; then
+        echo "  -none-"
+      else
+        counter=0
+        for kernel in "${invalid_signed_kernels[@]}"; do
+          echo "  $kernel"
+          echo "     -> ${invalid_validity_checks[$counter]}"
+          (( counter++ ))
+        done
+      fi
     else
-      for kernel in "${unsigned_kernels[@]}"; do
+      echo " Kernels Present: ${#kernels[@]}"
+      for kernel in "${kernels[@]}"; do
         echo "  $kernel"
       done
-    fi
-    echo " Number of signed kernels: ${#valid_signed_kernels[@]}"
-    if [[ "${#valid_signed_kernels[@]}" == 0 ]]; then
-      echo "  -none-"
-    else
-      counter=0
-      for kernel in "${valid_signed_kernels[@]}"; do
-        id=$(( "$counter" + 1 ))
-        echo "  $id - $kernel"
-        echo "    -> ${valid_validity_checks[$counter]}"
-        (( counter++ ))
-      done
-    fi
-    echo " Number of invalid signed kernels: ${#invalid_signed_kernels[@]}"
-    if [[ "${#invalid_signed_kernels[@]}" == 0 ]]; then
-      echo "  -none-"
-    else
-      counter=0
-      for kernel in "${invalid_signed_kernels[@]}"; do
-        echo "  $kernel"
-        echo "     -> ${invalid_validity_checks[$counter]}"
-        (( counter++ ))
-      done
-    fi
 
+      echo "Signature Database key and/or certificate not detected.."
+    fi
     echo "=============================================="
     echo "$prev_out"
     echo "=============================================="
@@ -195,6 +205,8 @@ function purge_kernel()
     if [[ "$user_input" == "0" ]]; then
       ERROR_MSG="cancelled.."
       return 1
+    elif [[ ! "$valid_keys" == "True" ]]; then
+      prev_out="missing/invalid keys, cannot check kernels.."
     elif [[ "$user_input" =~ ^[0-9]+$ ]] && test "$user_input" -le "${#valid_signed_kernels[@]}"; then
       # Purge signed kernel
       selection=$(( user_input - 1 ))
@@ -321,71 +333,78 @@ while [[ "$stop" == "False" ]]; do
 
   # Search for kernels
   mapfile -t kernels < <( find "$kernel_location" -name "vmlinuz-*" | sort -n )
-  unsigned_kernels=()
-  valid_signed_kernels=()
-  invalid_signed_kernels=()
-  valid_validity_checks=()
-  invalid_validity_checks=()
 
-  # For each detected kernel
-  for unvalidated_kernel in "${kernels[@]}"; do
-    # Validate kernel signatures
-    mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
-
-    # Increment signed/unsigned kernels
-    if [[  "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification OK" ]]; then
-      # Add to valid signed kernels
-      valid_signed_kernels+=("$unvalidated_kernel")
-      valid_validity_checks+=("${validity_check[0]}")
-    elif [[ "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification failed" ]]; then
-      # Add to invalid signed kernels
-      invalid_signed_kernels+=("$unvalidated_kernel")
-      invalid_validity_checks+=("${validity_check[0]}")
-    elif [[ "${#validity_check[@]}" = 2 && "${validity_check[0]}" = "No signature table present" ]]; then
-      # Add to unsiged kernels
-      unsigned_kernels+=("$unvalidated_kernel")
-    else
-      # SOME UNKNOWN ERROR?
-      echo "??error??"
-    fi
-  done
-
-  # Print all kernels
-  declare -i counter
-  echo " Number of kernels available for signing: ${#unsigned_kernels[@]}"
-  if [[ "${#unsigned_kernels[@]}" == 0 ]]; then
-    echo "  -none-"
-  else
-    for kernel in "${unsigned_kernels[@]}"; do
-      echo "  $kernel"
-    done
-  fi
-  echo " Number of signed kernels: ${#valid_signed_kernels[@]}"
-  if [[ "${#valid_signed_kernels[@]}" == 0 ]]; then
-    echo "  -none-"
-  else
-    counter=0
-    for kernel in "${valid_signed_kernels[@]}"; do
-      echo "  $kernel"
-      echo "    -> ${valid_validity_checks[$counter]}"
-      (( counter++ ))
-    done
-  fi
-  echo " Number of invalid signed kernels: ${#invalid_signed_kernels[@]}"
-  if [[ "${#invalid_signed_kernels[@]}" == 0 ]]; then
-    echo "  -none-"
-  else
-    counter=0
-    for kernel in "${invalid_signed_kernels[@]}"; do
-      echo "  $kernel"
-      echo "    -> ${invalid_validity_checks[$counter]}"
-      (( counter++ ))
-    done
-  fi
-
+  # Only verify keys if keys exist
   if [[ "$valid_keys" == "True" ]]; then
+    unsigned_kernels=()
+    valid_signed_kernels=()
+    invalid_signed_kernels=()
+    valid_validity_checks=()
+    invalid_validity_checks=()
+
+    # For each detected kernel
+    for unvalidated_kernel in "${kernels[@]}"; do
+      # Validate kernel signatures
+      mapfile -t validity_check < <(sbverify --cert "$cert_location" "${unvalidated_kernel}" 2>&1)
+
+      # Increment signed/unsigned kernels
+      if [[  "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification OK" ]]; then
+        # Add to valid signed kernels
+        valid_signed_kernels+=("$unvalidated_kernel")
+        valid_validity_checks+=("${validity_check[0]}")
+      elif [[ "${#validity_check[@]}" = 1 && "${validity_check[0]}" = "Signature verification failed" ]]; then
+        # Add to invalid signed kernels
+        invalid_signed_kernels+=("$unvalidated_kernel")
+        invalid_validity_checks+=("${validity_check[0]}")
+      elif [[ "${#validity_check[@]}" = 2 && "${validity_check[0]}" = "No signature table present" ]]; then
+        # Add to unsiged kernels
+        unsigned_kernels+=("$unvalidated_kernel")
+      else
+        # SOME UNKNOWN ERROR?
+        echo "??error??"
+      fi
+    done
+
+    # Print all kernels
+    declare -i counter
+    echo " Number of kernels available for signing: ${#unsigned_kernels[@]}"
+    if [[ "${#unsigned_kernels[@]}" == 0 ]]; then
+      echo "  -none-"
+    else
+      for kernel in "${unsigned_kernels[@]}"; do
+        echo "  $kernel"
+      done
+    fi
+    echo " Number of signed kernels: ${#valid_signed_kernels[@]}"
+    if [[ "${#valid_signed_kernels[@]}" == 0 ]]; then
+      echo "  -none-"
+    else
+      counter=0
+      for kernel in "${valid_signed_kernels[@]}"; do
+        echo "  $kernel"
+        echo "    -> ${valid_validity_checks[$counter]}"
+        (( counter++ ))
+      done
+    fi
+    echo " Number of invalid signed kernels: ${#invalid_signed_kernels[@]}"
+    if [[ "${#invalid_signed_kernels[@]}" == 0 ]]; then
+      echo "  -none-"
+    else
+      counter=0
+      for kernel in "${invalid_signed_kernels[@]}"; do
+        echo "  $kernel"
+        echo "    -> ${invalid_validity_checks[$counter]}"
+        (( counter++ ))
+      done
+    fi
+
     echo "Signature Database key & certificate detected.."
   else
+    echo " Kernels Present: ${#kernels[@]}"
+    for kernel in "${kernels[@]}"; do
+      echo "  $kernel"
+    done
+
     echo "Signature Database key and/or certificate not detected.."
   fi
   echo "=============================================="
