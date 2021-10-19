@@ -461,7 +461,7 @@ while [[ "$stop" == "False" ]]; do
     fi
   elif [[ "$user_input" == "4" ]]; then
     # check mainline present
-    command_exists=$(su -c 'command -v mainline-gtk' "$(logname)")
+    command_exists="$(command -v mainline-gtk)"
     if [[ -n "$command_exists" ]]; then
       # redirect to mainline-gtk app
       mainline-gtk
@@ -474,8 +474,8 @@ while [[ "$stop" == "False" ]]; do
       prev_out="mainline-gtk not present!"
     fi
   elif [[ "$user_input" == "5" ]]; then
-    command_exists=$(su -c 'command -v grub-customizer' "$(logname)")
     # check grub-customizer present
+    command_exists="$(command -v grub-customizer)"
     if [[ -n "$command_exists" ]]; then
       # redirect to grub-customizer app
       grub-customizer
