@@ -301,8 +301,13 @@ if [[ ! -f "$SCRIPT_DIR/keylocations.cfg" ]];then
   echo "missing config file.."
 
   # Create new config file
-  echo "Creating new config file.."
+  echo "creating new config file.."
   touch "$SCRIPT_DIR/keylocations.cfg"
+
+  if [[ ! -f "$SCRIPT_DIR/keylocations.cfg" ]];then
+    echo "creation failed! unknown error.."
+    exit 1
+  fi
 
   # Update ownership
   USER="$(who | awk '{print $1;}')"
