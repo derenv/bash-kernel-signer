@@ -296,43 +296,58 @@ function create_keys()
 ## Check for signing keys
 # Check if files specified in config
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-if [[ -f "$SCRIPT_DIR/keylocations.cfg" ]];then
-  # Import config file
-  source "$SCRIPT_DIR/keylocations.cfg"
-
-  # Check keys exist
-  if [[ -z "$key_location" || -z "$cert_location" ]]; then
-    # empty key & cert file locations in config
-    valid_keys="False"
-  else
-    # Key & cert files are specified
-    valid_keys="True"
-
-    # Check key & cert valid locations
-    if [[ ! -f $key_location || ! -f $cert_location ]]; then
-      # Otherwise print error
-      echo "invalid Signature Database key/certificate locations, check config file.."
-      exit 1
-    fi
-  fi
-
-  # Check valid locations
-  if [[ -z $kernel_location ]]; then
-    # Otherwise print error
-    echo "empty kernel location, check config file.."
-    exit 1
-  else
-    # Check files exist
-    if [[ ! -d $kernel_location ]]; then
-      # Otherwise print error
-      echo "missing kernel location, check config file.."
-      exit 1
-    fi
-  fi
-else
+if [[ ! -f "$SCRIPT_DIR/keylocations.cfg" ]];then
   # Otherwise print error
   echo "missing config file.."
+
+  # Create new config file
+  echo "Creating new config file.."
+  touch "$SCRIPT_DIR/keylocations.cfg"
+
+  # Update ownership
+  USER="$(who | awk '{print $1;}')"
+  chown "$USER:$USER" "$SCRIPT_DIR/keylocations.cfg"
+
+  # Add variables
+  echo 'key_location=""' >> "$SCRIPT_DIR/keylocations.cfg"
+  echo 'cert_location=""' >> "$SCRIPT_DIR/keylocations.cfg"
+  echo 'kernel_location=""' >> "$SCRIPT_DIR/keylocations.cfg"
+
+  # Warn user
+  echo "!!PLEASE UPDATE CONFIG FILE WITH KERNEL LOCATION!!"
+fi
+
+# Import config file
+source "$SCRIPT_DIR/keylocations.cfg"
+
+# Check keys exist
+if [[ -z "$key_location" || -z "$cert_location" ]]; then
+  # empty key & cert file locations in config
+  valid_keys="False"
+else
+  # Key & cert files are specified
+  valid_keys="True"
+
+  # Check key & cert valid locations
+  if [[ ! -f $key_location || ! -f $cert_location ]]; then
+    # Otherwise print error
+    echo "invalid Signature Database key/certificate locations, check config file.."
+    exit 1
+  fi
+fi
+
+# Check valid locations
+if [[ -z $kernel_location ]]; then
+  # Otherwise print error
+  echo "empty kernel location, check config file.."
   exit 1
+else
+  # Check files exist
+  if [[ ! -d $kernel_location ]]; then
+    # Otherwise print error
+    echo "missing kernel location, check config file.."
+    exit 1
+  fi
 fi
 
 
