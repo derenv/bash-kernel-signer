@@ -61,8 +61,8 @@ function sign_kernel()
       echo "  -none-"
     else
       counter=0
-      id=$(( "$counter" + 1 ))
       for kernel in "${unsigned_kernels[@]}"; do
+        id=$(( "$counter" + 1 ))
         echo "  $id - $kernel"
         (( counter++ ))
       done
