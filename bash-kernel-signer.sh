@@ -114,7 +114,7 @@ function sign_kernel()
       # Sign kernel
       selection=$(( user_input - 1 ))
       datetime=$(date +"%Y-%m-%d+%T")
-      sbsign --key "$key_location" --cert "$cert_location" --output "${unsigned_kernels[$selection]}-signed$datetime" "${unsigned_kernels[$selection]}"
+      sbsign --key "$key_location" --cert "$cert_location" --output "${unsigned_kernels[$selection]}.signed$datetime" "${unsigned_kernels[$selection]}"
       prev_out="$?"
     else
       prev_out="invalid input.."
@@ -234,7 +234,7 @@ function create_keys()
 {
   # Get user input
   tput reset
-  read -p "Please specify (existing) directory for new keys & certificates:" -r user_input
+  read -p "Please specify (existing) directory for new keys & certificates (0 to cancel):" -r user_input
 
   # Validate folder exists
   if [[ "$user_input" == "0" ]]; then
@@ -263,7 +263,7 @@ function create_keys()
     read -n 1 -s -r -p "Keys successfully generated, press any key to continue.."
 
     # Create update files
-    echo "\ncreating update files for keystore.."
+    echo -e "\ncreating update files for keystore.."
     # PK
     cert-to-efi-sig-list -g "$(uuidgen)" "${user_input}/new_PK.crt" "${user_input}/new_PK.esl"
     sign-efi-sig-list -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" PK "${user_input}/new_PK.esl" "${user_input}/new_PK.auth"
@@ -283,7 +283,9 @@ function create_keys()
     openssl x509 -outform DER -in "${user_input}/new_KEK.crt" -out "${user_input}/new_KEK.cer"
     openssl x509 -outform DER -in "${user_input}/new_db.crt" -out "${user_input}/new_db.cer"
     # (continue)
-    read -n 1 -s -r -p "\nDER versions successfully generated, press any key to continue"
+    echo -e "\n"
+    read -n 1 -s -r -p "DER versions successfully generated, press any key to continue"
+    echo -e "\n"
 
     # Create compound esl files & auth counterparts
     cat "${user_input}/old_KEK.esl" "${user_input}/new_KEK.esl" > "${user_input}/compound_KEK.esl"
@@ -291,8 +293,22 @@ function create_keys()
     sign-efi-sig-list -k "${user_input}/new_PK.key" -c "${user_input}/new_PK.crt" KEK "${user_input}/compound_KEK.esl" "${user_input}/compound_KEK.auth"
     sign-efi-sig-list -k "${user_input}/new_KEK.key" -c "${user_input}/new_KEK.crt" db "${user_input}/compound_db.esl" "${user_input}/compound_db.auth"
     # (continue)
-    echo "New esl & auth files successfully generated!"
-    echo "Add /etc/efikeys/db.key abd /etc/efikeys/db.crt to config file!"
+    echo -e "\nNew esl & auth files successfully generated!"
+
+    # Set the new locations in config file
+    echo "Adding ${user_input}/new_db.key and ${user_input}/new_db.crt to config file!"
+    sed_location="${user_input//\//\\/}" #replace all '/' with '\/'
+    sed_command_key='1s/.*/key_location="'
+    sed_command_key=$sed_command_key"${sed_location}"
+    sed_command_key=$sed_command_key'\/new_db.key"/'
+    sed_command_cert='2s/.*/cert_location="'
+    sed_command_cert=$sed_command_cert"${sed_location}"
+    sed_command_cert=$sed_command_cert'\/new_db.crt"/'
+    sed -i "${sed_command_key}" "$SCRIPT_DIR/keylocations.cfg"
+    sed -i "${sed_command_cert}" "$SCRIPT_DIR/keylocations.cfg"
+    echo "Added ${user_input}/new_db.key and ${user_input}/new_db.crt to config file!"
+
+    # Give user links for adding to keystore
     echo "See Sakaki's guide (https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki's_EFI_Install_Guide/Configuring_Secure_Boot#Installing_New_Keys_into_the_Keystore) on how to update your keystore!"
     read -n 1 -s -r -p "(press any key to continue)"
   else
@@ -487,6 +503,12 @@ while [[ "$stop" == "False" ]]; do
     create_keys
     if [[ $? == 0 ]]; then
       prev_out="success!"
+
+      # Import config file
+      source "$SCRIPT_DIR/keylocations.cfg"
+
+      # Key & cert files now exist
+      valid_keys="True"
     else
       prev_out="failure: $ERROR_MSG"
     fi
